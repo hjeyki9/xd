@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tool VIP</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 350px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.5em;
+      color: #2c3e50;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .red { background-color: #e74c3c; color: white; }
+    .white { background-color: #ecf0f1; color: #2c3e50; }
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #eaf2f8;
+      border-radius: 12px;
+    }
+    .icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-left: 5px;
+    }
+    .icon.chan {
+      background-color: red;
+    }
+    .icon.le {
+      background-color: white;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tool Xóc Đĩa MD5</h1>
+    <input type="text" id="md5" placeholder="Nhập mã MD5">
+    <div>
+      <button class="red" onclick="predict('chan')">Chẵn (Đỏ)</button>
+      <button class="white" onclick="predict('le')">Lẻ (Trắng)</button>
+    </div>
+    <div class="result" id="output"></div>
+  </div>
+
+  <script>
+    function charToNum(c) {
+      return parseInt(c, 16);
+    }
+
+    function calcParity(sum) {
+      return sum % 2 === 0 ? 'chan' : 'le';
+    }
+
+    function getLabel(parity) {
+      const text = parity === 'chan' ? 'Chẵn' : 'Lẻ';
+      const icon = `<span class="icon ${parity}"></span>`;
+      return `${text} ${icon}`;
+    }
+
+    function finalPrediction(p1, p2, p3, p4) {
+      const list = [p1, p2, p3, p4];
+      const countChan = list.filter(p => p === 'chan').length;
+      const countLe = 4 - countChan;
+      if (countChan === 4) return 'chan';
+      if (countLe === 4) return 'le';
+      if (countChan === 2 && countLe === 2) return p4;
+      if (countLe === 1 && countChan === 3) return p4;
+      if (countChan === 1 && countLe === 3) return p4 === 'le' ? 'chan' : 'le';
+    }
+
+    function predict(previousResult) {
+      const md5 = document.getElementById('md5').value.trim().toLowerCase();
+      if (md5.length !== 32 || !/^[0-9a-f]{32}$/.test(md5)) {
+        alert("Mã MD5 không hợp lệ!");
+        return;
+      }
+      const nums = Array.from(md5).map(charToNum);
+
+      const turn1 = nums.reduce((acc, val) => acc + val, 0);
+      const turn2 = nums.slice(0, 8).reduce((acc, val) => acc + val, 0);
+      const turn3 = [1, 5, 23, 24, 30].map(i => nums[i]).reduce((acc, val) => acc + val, 0);
+      const turn4 = previousResult === 'chan' ? 'chan' : 'le';
+
+      const p1 = calcParity(turn1);
+      const p2 = calcParity(turn2);
+      const p3 = calcParity(turn3);
+      const p4 = turn4;
+      const final = finalPrediction(p1, p2, p3, p4);
+
+      const result = `
+        <strong>Lượt 1:</strong> ${getLabel(p1)}<br>
+        <strong>Lượt 2:</strong> ${getLabel(p2)}<br>
+        <strong>Lượt 3:</strong> ${getLabel(p3)}<br>
+        <strong>Lượt 4:</strong> ${getLabel(p4)}<br>
+        <hr>
+        <strong>Dự đoán cuối cùng:</strong> ${getLabel(final)}
+      `;
+
+      document.getElementById('output').innerHTML = result;
+    }
+  </script>
+</body>
+</html>
